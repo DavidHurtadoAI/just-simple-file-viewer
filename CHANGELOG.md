@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0
+
+- Preview CSV files as tables using Obsidian's Markdown table styles; switch to text for editing without converting the file.
+- Configure the default CSV view, automatic or manual separator, and first-row headings.
+- Handle quoted separators, escaped quotes and multiline cells as literal text.
+- Bound previews to 500 rows, 100 columns and 1,048,576 source characters to keep them responsive; the full file remains editable as text.
+
 ## 0.1.2
 
 - Replace the content-padding `!important` override with a more specific selector scoped to this plugin's file view, preserving the edge-to-edge editor layout.

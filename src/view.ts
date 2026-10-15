@@ -1,4 +1,4 @@
-import { FileView, normalizePath, Notice, Scope, type TFile, type WorkspaceLeaf } from 'obsidian';
+import { FileView, normalizePath, Notice, Scope, setIcon, setTooltip, type TFile, type WorkspaceLeaf } from 'obsidian';
 import { Compartment, EditorState, type Extension } from '@codemirror/state';
 import { drawSelection, EditorView, highlightActiveLine, highlightActiveLineGutter, keymap, lineNumbers } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
@@ -9,6 +9,7 @@ import { tags } from '@lezer/highlight';
 import type JustSimpleFileViewer from './main';
 import { languageFor } from './languages';
 import { checkedUpdate, conflictCopyPath, decodeText, extensionOf, HIGHLIGHT_LIMIT, MAX_FILE_BYTES, TextConflictError, textFormat } from './text.ts';
+import { CSV_PREVIEW_CHAR_LIMIT, parseCsvPreview } from './csv.ts';
 
 export const VIEW_TYPE = 'just-simple-file-viewer';
 const colors = HighlightStyle.define([
@@ -32,6 +33,11 @@ export class SimpleTextView extends FileView {
   private readonly language = new Compartment();
   private root!: HTMLElement;
   private editorHost!: HTMLElement;
+  private tableHost!: HTMLElement;
+  private tableAction!: HTMLElement;
+  private csvTable = false;
+  private tableCache = '';
+  private tableDoc: EditorState['doc'] | null = null;
   private banner!: HTMLElement;
   private position!: HTMLElement;
   private mode!: HTMLElement;
@@ -73,6 +79,8 @@ export class SimpleTextView extends FileView {
     this.banner = this.root.createDiv({ cls: 'jsfv-banner', attr: { role: 'status', 'aria-live': 'polite' } });
     this.banner.hidden = true;
     this.editorHost = this.root.createDiv({ cls: 'jsfv-editor' });
+    this.tableHost = this.root.createDiv({ cls: 'jsfv-table markdown-rendered', attr: { tabindex: '0', role: 'region', 'aria-label': 'CSV table preview' } });
+    this.tableHost.hidden = true;
     const status = this.root.createDiv({ cls: 'jsfv-status' });
     this.mode = status.createSpan({ cls: 'jsfv-mode' });
     this.formatLabel = status.createSpan();
@@ -81,11 +89,13 @@ export class SimpleTextView extends FileView {
     this.editor = new EditorView({ parent: this.editorHost, state: this.makeState('') });
     this.addAction('search', 'Find and replace', () => this.find());
     this.addAction('wrap-text', 'Toggle word wrap', () => this.toggleWrap());
+    this.tableAction = this.addAction('table', 'View CSV as table', () => this.setCsvView(this.csvTable ? 'text' : 'table'));
     this.addAction('save', 'Save file', () => { void this.save(); });
     this.registerEvent(this.app.vault.on('modify', file => {
       if (file === this.file) void this.refreshFromDisk();
     }));
     this.updateStatus();
+    this.updatePresentation();
   }
 
   private settingsExtensions(): Extension {
@@ -139,15 +149,73 @@ export class SimpleTextView extends FileView {
       this.options.reconfigure(this.settingsExtensions()),
       this.language.reconfigure(this.languageExtension(this.editor.state.doc.length)),
     ] });
+    this.updatePresentation();
     this.updateStatus();
+  }
+
+  private updatePresentation(): void {
+    const csv = extensionOf(this.file?.path ?? '') === 'csv';
+    const table = csv && this.csvTable && this.ready;
+    this.tableAction.hidden = !csv;
+    setIcon(this.tableAction, table ? 'file-code-2' : 'table');
+    setTooltip(this.tableAction, table ? 'Edit CSV as text' : 'View CSV as table');
+    this.editorHost.hidden = table;
+    this.tableHost.hidden = !table;
+    if (!table || !this.editor) return;
+    const cache = `${this.plugin.settings.csvDelimiter}:${this.plugin.settings.csvHeader}`;
+    if (this.tableDoc === this.editor.state.doc && this.tableCache === cache) return;
+    this.tableDoc = this.editor.state.doc;
+    this.tableCache = cache;
+    this.tableHost.empty();
+    const controls = this.tableHost.createDiv({ cls: 'jsfv-table-controls' });
+    controls.createEl('button', { text: 'Edit as text' }).addEventListener('click', () => this.setCsvView('text'));
+    try {
+      // Read only a bounded prefix, even when the editor holds a much larger file.
+      const source = this.editor.state.sliceDoc(0, Math.min(this.editor.state.doc.length, CSV_PREVIEW_CHAR_LIMIT + 1));
+      const preview = parseCsvPreview(source, this.plugin.settings.csvDelimiter);
+      if (preview.truncated) controls.createSpan({ text: 'Preview limited to 500 rows, 100 columns and 1,048,576 characters. Open text for the full file.' });
+      if (!preview.rows.length) {
+        this.tableHost.createEl('p', { text: preview.truncated ? 'No complete row fits in the preview.' : 'Empty CSV file.' });
+        return;
+      }
+      const grid = this.tableHost.createEl('table', { attr: { 'aria-label': this.file?.name ?? 'CSV' } });
+      const columns = Math.max(...preview.rows.map(row => row.length));
+      const header = this.plugin.settings.csvHeader;
+      const head = header ? grid.createEl('thead') : null;
+      const body = grid.createEl('tbody');
+      preview.rows.forEach((row, index) => {
+        const isHeader = header && index === 0;
+        const tr = (isHeader ? head! : body).createEl('tr');
+        for (let column = 0; column < columns; column++) {
+          // Literal text preserves pipes, Markdown and HTML without interpreting them.
+          tr.createEl(isHeader ? 'th' : 'td', { text: row[column] ?? '', ...(isHeader ? { attr: { scope: 'col' } } : {}) });
+        }
+      });
+    } catch (error) {
+      this.tableHost.createEl('p', { text: error instanceof Error ? error.message : 'Unable to preview this CSV. Switch to text to inspect it.' });
+    }
+  }
+
+  setCsvView(value: 'table' | 'text', focus = true): void {
+    this.csvTable = value === 'table';
+    this.updatePresentation();
+    this.updateStatus();
+    if (focus) this.focusContent();
+  }
+
+  focusContent(): void {
+    if (!this.tableHost.hidden) this.tableHost.focus();
+    else { this.editor?.requestMeasure(); this.editor?.focus(); }
   }
 
   find(): void {
     if (!this.ready || !this.editor) return;
+    this.setCsvView('text');
     openSearchPanel(this.editor);
   }
 
   toggleWrap(): void {
+    this.setCsvView('text');
     this.wrapped = !this.wrapped;
     this.applySettings();
   }
@@ -172,7 +240,9 @@ export class SimpleTextView extends FileView {
     this.edited = false;
     this.conflicted = false;
     this.base = '';
+    this.csvTable = this.plugin.settings.csvView === 'table';
     this.editor?.setState(this.makeState(''));
+    this.updatePresentation();
     try {
       const raw = await this.readText(file);
       if (generation !== this.generation) return;
@@ -200,6 +270,7 @@ export class SimpleTextView extends FileView {
     this.ready = true;
     this.banner.hidden = true;
     this.editor?.setState(this.makeState(format.content));
+    this.updatePresentation();
     this.updateStatus();
   }
 
@@ -315,8 +386,10 @@ export class SimpleTextView extends FileView {
     const state = this.editor.state;
     const cursor = state.selection.main.head;
     const line = state.doc.lineAt(cursor);
+    const table = !this.tableHost.hidden;
+    this.position.hidden = table;
     this.position.setText(`Ln ${line.number}, Col ${cursor - line.from + 1}`);
-    this.mode.setText(this.modeName + (state.doc.length > HIGHLIGHT_LIMIT ? ' · Large file' : ''));
+    this.mode.setText(table ? 'CSV table preview' : this.modeName + (state.doc.length > HIGHLIGHT_LIMIT ? ' · Large file' : ''));
     this.formatLabel.setText(`UTF-8${this.bom ? ' BOM' : ''} · ${this.eol === '\r\n' ? 'CRLF' : this.eol === '\r' ? 'CR' : 'LF'}`);
     this.saveState.setText(!this.ready ? 'Read only' : this.conflicted ? 'Conflict' : this.edited ? 'Unsaved' : 'Saved');
   }

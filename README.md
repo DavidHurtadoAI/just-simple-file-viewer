@@ -2,7 +2,7 @@
 
 There are already Obsidian plugins that open many kinds of files and offer extensive editing features. **Just Simple File Viewer deliberately aims for minimalism:** a small, focused way to read and edit text files in normal Obsidian tabs.
 
-Open JSON, CSV, Python, TXT, configuration files and other text files, edit the source directly, and keep everything in your vault. It reuses the CodeMirror editor already built into Obsidian and bundles only selected syntax parsers. The JavaScript is about **80 KiB uncompressed**, including license notices.
+Open JSON, CSV, Python, TXT, configuration files and other text files, edit the source directly, and keep everything in your vault. It reuses the CodeMirror editor already built into Obsidian and bundles only selected syntax parsers. The JavaScript is about **85 KiB uncompressed**, including license notices.
 
 No Office viewers, document conversion engines, separate editor runtime, accounts or remote services. Just text.
 
@@ -13,7 +13,7 @@ No Office viewers, document conversion engines, separate editor runtime, account
 - Normal Obsidian tabs, splits and pop-out windows.
 - Automatic saving after 750 ms without typing, plus immediate save with Ctrl/Cmd+S and on tab close.
 - Syntax highlighting for JSON, JavaScript, TypeScript, Python, CSS, HTML/XML, YAML, TOML, shell scripts, diff and properties files.
-- Other languages and CSV/TSV remain editable plain text.
+- CSV table preview styled like native Markdown tables, with one-click switching to source editing. Other languages and TSV remain editable plain text.
 - Find and replace with case matching, whole words and regular expressions (Ctrl/Cmd+F or Ctrl/Cmd+H).
 - Undo/redo, multiple selections, line numbers, indentation and optional word wrap (Alt+Z).
 - Native theme colors and monospace font; no separate editor theme to configure.
@@ -27,11 +27,25 @@ Click a supported file in the vault file explorer. For any other text extension,
 
 In settings, add extensions separated by commas. Reload the plugin to apply extension associations. Markdown, Canvas, Bases, SVG and extensions already owned by another view keep their normal default viewer; **Open as text** can explicitly open their textual source. Known Office, PDF, image, archive and executable extensions are excluded.
 
-CSV is edited as source text, not a table. HTML and SVG are shown as text and never executed or rendered. There are no code execution, language server, completion, preview or Office features.
+### CSV tables
+
+CSV files open as a table by default. Click **Edit as text** to edit the CSV source, then use the table button in the file header to return to the preview. Find and replace also switches to text. Switching views never converts the file to Markdown or changes its contents.
+
+![CSV preview in Obsidian using native Markdown table styles, with an Edit as text button](docs/images/csv-table.png)
+
+Three settings keep this simple:
+
+- **CSV default view:** table or text.
+- **CSV separator:** automatic, comma, semicolon or tab. Automatic detection uses the first logical row and ignores quoted separators; choose a separator manually for ambiguous files.
+- **CSV header row:** treat the first row as headings, or show all rows as data.
+
+Quoted separators, escaped quotes and multiline cells are supported. Cell contents are literal text: Markdown, links and HTML inside a CSV are not interpreted. The table uses Obsidian's Markdown table styles without a spreadsheet engine, sorting or cell editing. The preview shows at most 500 rows (including the header), 100 columns and 1,048,576 source characters; a notice identifies truncated previews. The complete file remains available in text mode. Malformed quoting shows an explanation and a button to edit the source.
+
+HTML and SVG files are shown as text and never executed or rendered. There are no code execution, language server, completion or Office features.
 
 ## Text format and large files
 
-Version 0.1 supports UTF-8, including UTF-8 with BOM. Other encodings are refused without changing the file; convert a copy to UTF-8 first. Standard LF, CRLF and CR line endings, the BOM and the absence of a final newline are preserved. A file with mixed line endings adopts its first line-ending convention when edited.
+Supports UTF-8, including UTF-8 with BOM. Other encodings are refused without changing the file; convert a copy to UTF-8 first. Standard LF, CRLF and CR line endings, the BOM and the absence of a final newline are preserved. A file with mixed line endings adopts its first line-ending convention when edited.
 
 Files up to 20 MiB can be opened. Syntax highlighting is omitted above 1,048,576 characters. CodeMirror only renders the visible part of the document, although the file itself must fit in memory. These limits are safeguards, not a promise of identical performance on every device.
 

@@ -48,6 +48,7 @@
   v.toggleWrap();
   check(v.editor.dom.querySelector('.cm-lineWrapping'), 'Word wrapping can be toggled');
   v = await open(csv);
+  v.setCsvView('text');
   v.editor.dispatch({ changes: { from: 0, to: 4, insert: 'person' } });
   await v.save();
   check((await app.vault.read(csv)) === 'person,city\r\nDavid,Madrid\r\n', 'CSV edits preserve CRLF');
