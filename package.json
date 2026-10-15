@@ -1,0 +1,36 @@
+{
+  "name": "just-simple-file-viewer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A deliberately minimal text file editor for Obsidian.",
+  "author": "David Hurtado",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/DavidHurtadoAI/just-simple-file-viewer.git" },
+  "homepage": "https://github.com/DavidHurtadoAI/just-simple-file-viewer#readme",
+  "bugs": { "url": "https://github.com/DavidHurtadoAI/just-simple-file-viewer/issues" },
+  "type": "module",
+  "engines": { "node": ">=22.13.0" },
+  "scripts": {
+    "dev": "node esbuild.config.mjs --watch",
+    "build": "tsc --noEmit && node esbuild.config.mjs",
+    "lint": "eslint src --max-warnings 0",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "check": "npm run lint && npm test && npm run build && node scripts/audit.mjs",
+    "audit:release": "node scripts/audit.mjs"
+  },
+  "devDependencies": {
+    "@codemirror/commands": "6.8.1",
+    "@codemirror/language": "6.11.3",
+    "@codemirror/legacy-modes": "6.5.1",
+    "@codemirror/search": "6.5.11",
+    "@codemirror/state": "6.5.0",
+    "@codemirror/view": "6.38.6",
+    "@lezer/highlight": "1.2.1",
+    "esbuild": "0.25.12",
+    "eslint": "10.11.0",
+    "eslint-plugin-obsidianmd": "0.4.2",
+    "obsidian": "1.13.1",
+    "typescript": "5.9.3"
+  },
+  "overrides": { "moment": "2.31.0" }
+}

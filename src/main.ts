@@ -1,0 +1,136 @@
+import { FuzzySuggestModal, Notice, Plugin, PluginSettingTab, TFile, type App, type SettingDefinition } from 'obsidian';
+import { BINARY_EXTENSIONS, decodeText, DEFAULT_EXTENSIONS, extensionOf, MAX_FILE_BYTES, NATIVE_EXTENSIONS, parseExtensions } from './text.ts';
+import { SimpleTextView, VIEW_TYPE } from './view';
+
+interface Settings {
+  extensions: string;
+  highlightSyntax: boolean;
+  wordWrap: boolean;
+  lineNumbers: boolean;
+  tabSize: number;
+}
+const DEFAULT_SETTINGS: Settings = {
+  extensions: DEFAULT_EXTENSIONS.join(', '),
+  highlightSyntax: true,
+  wordWrap: false,
+  lineNumbers: true,
+  tabSize: 4,
+};
+
+export default class JustSimpleFileViewer extends Plugin {
+  settings: Settings = { ...DEFAULT_SETTINGS };
+  skippedExtensions: string[] = [];
+
+  get views(): SimpleTextView[] {
+    return this.app.workspace.getLeavesOfType(VIEW_TYPE)
+      .map(leaf => leaf.view).filter((view): view is SimpleTextView => view instanceof SimpleTextView);
+  }
+
+  async onload(): Promise<void> {
+    const saved = await this.loadData() as Partial<Settings> | null;
+    this.settings = { ...DEFAULT_SETTINGS, ...saved };
+    if (typeof this.settings.extensions !== 'string') this.settings.extensions = DEFAULT_SETTINGS.extensions;
+    if (![2, 4, 8].includes(this.settings.tabSize)) this.settings.tabSize = 4;
+    this.registerView(VIEW_TYPE, leaf => new SimpleTextView(leaf, this));
+    const extensions: string[] = [];
+    for (const extension of parseExtensions(this.settings.extensions)) {
+      if (NATIVE_EXTENSIONS.has(extension) || BINARY_EXTENSIONS.has(extension)) {
+        this.skippedExtensions.push(extension);
+        continue;
+      }
+      extensions.push(extension);
+    }
+    this.registerTextExtensions(extensions);
+    this.addSettingTab(new FileViewerSettings(this.app, this));
+    this.addCommand({ id: 'open-text-file', name: 'Open text file', callback: () => new TextFilePicker(this.app, this).open() });
+    this.addCommand({
+      id: 'open-current-as-text', name: 'Open current file as text',
+      checkCallback: checking => {
+        const file = this.app.workspace.getActiveFile();
+        if (!file || BINARY_EXTENSIONS.has(extensionOf(file.path))) return false;
+        if (!checking) void this.openAsText(file);
+        return true;
+      },
+    });
+    this.registerEvent(this.app.workspace.on('file-menu', (menu, file) => {
+      if (!(file instanceof TFile) || BINARY_EXTENSIONS.has(extensionOf(file.path))) return;
+      menu.addItem(item => item.setTitle('Open as text').setIcon('file-code-2').onClick(() => { void this.openAsText(file); }));
+    }));
+  }
+
+  private registerTextExtensions(extensions: string[]): void {
+    if (!extensions.length) return;
+    // Register in one batch so Obsidian only refreshes the explorer once.
+    // If a view already owns an extension, split the batch to isolate it.
+    try { this.registerExtensions(extensions, VIEW_TYPE); }
+    catch {
+      if (extensions.length === 1) this.skippedExtensions.push(extensions[0]!);
+      else {
+        const middle = Math.floor(extensions.length / 2);
+        this.registerTextExtensions(extensions.slice(0, middle));
+        this.registerTextExtensions(extensions.slice(middle));
+      }
+    }
+  }
+
+  async openAsText(file: TFile): Promise<void> {
+    try {
+      if (BINARY_EXTENSIONS.has(extensionOf(file.path))) throw new Error('This file type is not a plain-text format.');
+      if (file.stat.size > MAX_FILE_BYTES) throw new Error('This file exceeds the 20 MB editing limit.');
+      decodeText(await this.app.vault.readBinary(file));
+      const existing = this.views.find(view => view.file === file);
+      if (existing) { await this.app.workspace.revealLeaf(existing.leaf); existing.editor?.focus(); return; }
+      const leaf = this.app.workspace.getLeaf('tab');
+      await leaf.setViewState({ type: VIEW_TYPE, state: { file: file.path }, active: true });
+      await this.app.workspace.revealLeaf(leaf);
+      if (leaf.view instanceof SimpleTextView) leaf.view.editor?.focus();
+    } catch (error) {
+      new Notice(error instanceof Error ? error.message : 'Unable to open this file.');
+    }
+  }
+
+  async saveSettings(): Promise<void> {
+    await this.saveData(this.settings);
+    for (const view of this.views) view.applySettings();
+  }
+}
+
+class TextFilePicker extends FuzzySuggestModal<TFile> {
+  constructor(app: App, private readonly plugin: JustSimpleFileViewer) {
+    super(app);
+    this.setPlaceholder('Choose a text file from this vault…');
+  }
+  getItems(): TFile[] {
+    return this.app.vault.getFiles().filter(file => !BINARY_EXTENSIONS.has(extensionOf(file.path)));
+  }
+  getItemText(file: TFile): string { return file.path; }
+  onChooseItem(file: TFile): void { void this.plugin.openAsText(file); }
+}
+
+class FileViewerSettings extends PluginSettingTab {
+  constructor(app: App, private readonly plugin: JustSimpleFileViewer) { super(app, plugin); }
+  getSettingDefinitions(): SettingDefinition[] {
+    return [
+      { name: 'File extensions', desc: 'Open these extensions as text by default. Separate with commas. Reload the plugin after changing this list. Existing native views and other plugins take priority.', control: { type: 'textarea', key: 'extensions', rows: 5 } },
+      { name: 'Excluded extensions', desc: this.plugin.skippedExtensions.join(', '), visible: () => this.plugin.skippedExtensions.length > 0 },
+      { name: 'Syntax highlighting', desc: 'Color supported languages. Files over one million characters use plain text to keep editing responsive.', control: { type: 'toggle', key: 'highlightSyntax' } },
+      { name: 'Line numbers', control: { type: 'toggle', key: 'lineNumbers' } },
+      { name: 'Word wrap', desc: 'Wrap long lines. Toggle the active tab with Alt+Z or its wrap button.', control: { type: 'toggle', key: 'wordWrap' } },
+      { name: 'Indent size', control: { type: 'dropdown', key: 'tabSize', options: { '2': '2 spaces', '4': '4 spaces', '8': '8 spaces' } } },
+    ];
+  }
+  getControlValue(key: string): unknown {
+    if (key === 'tabSize') return String(this.plugin.settings.tabSize);
+    return this.plugin.settings[key as keyof Settings];
+  }
+  async setControlValue(key: string, value: unknown): Promise<void> {
+    const { settings } = this.plugin;
+    if (key === 'extensions' && typeof value === 'string') settings.extensions = value;
+    if (key === 'tabSize' && [2, 4, 8].includes(Number(value))) settings.tabSize = Number(value);
+    if ((key === 'highlightSyntax' || key === 'lineNumbers' || key === 'wordWrap') && typeof value === 'boolean') {
+      settings[key] = value;
+      if (key === 'wordWrap') for (const view of this.plugin.views) view.setWrap(value);
+    }
+    await this.plugin.saveSettings();
+  }
+}
