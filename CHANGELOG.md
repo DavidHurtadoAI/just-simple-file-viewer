@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2
+
+- Replace the content-padding `!important` override with a more specific selector scoped to this plugin's file view, preserving the edge-to-edge editor layout.
+- Reject `!important` declarations in the release audit.
+
 ## 0.1.1
 
 - Open a specific vault-relative file path from the command palette without enumerating the vault. Explorer and context-menu opening continue to work as before.

@@ -4,6 +4,8 @@ Verified on 2026-10-15: the initial editor was tested in Obsidian 1.13.4 and 1.1
 
 `npm run check` covers ESLint with no warnings, strict TypeScript, six unit tests, the production build and the bundle audit. `npm audit` reported zero vulnerabilities.
 
+For 0.1.2, the CSS specificity change was checked live in the development vault: content padding remained zero and the root retained the same full-height bounds. The release audit now rejects `!important` declarations in `styles.css`.
+
 `integration.js` runs 26 checks in Obsidian: actual source editing and disk persistence, highlighting, search controls, line numbers and wrapping, UTF-8 BOM and CRLF, clean external reload, conflict protection, recovery copies on close, binary rejection, unknown extensions and extensionless files, native Markdown handling and viewport rendering of a 120,000-line file.
 
 `advanced.js` runs seven additional checks: edits during an in-flight save, absence of false conflicts from our own writes, immediate saving on close, settings rendering, live settings changes, saving on plugin disable and editor cleanup.
