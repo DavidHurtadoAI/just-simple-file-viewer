@@ -1,4 +1,4 @@
-import { FuzzySuggestModal, Notice, Plugin, PluginSettingTab, TFile, type App, type SettingDefinition } from 'obsidian';
+import { Modal, normalizePath, Notice, Plugin, PluginSettingTab, Setting, TFile, type App, type SettingDefinition } from 'obsidian';
 import { BINARY_EXTENSIONS, decodeText, DEFAULT_EXTENSIONS, extensionOf, MAX_FILE_BYTES, NATIVE_EXTENSIONS, parseExtensions } from './text.ts';
 import { SimpleTextView, VIEW_TYPE } from './view';
 
@@ -42,7 +42,7 @@ export default class JustSimpleFileViewer extends Plugin {
     }
     this.registerTextExtensions(extensions);
     this.addSettingTab(new FileViewerSettings(this.app, this));
-    this.addCommand({ id: 'open-text-file', name: 'Open text file', callback: () => new TextFilePicker(this.app, this).open() });
+    this.addCommand({ id: 'open-text-file', name: 'Open text file', callback: () => new TextFilePathModal(this.app, this).open() });
     this.addCommand({
       id: 'open-current-as-text', name: 'Open current file as text',
       checkCallback: checking => {
@@ -73,19 +73,21 @@ export default class JustSimpleFileViewer extends Plugin {
     }
   }
 
-  async openAsText(file: TFile): Promise<void> {
+  async openAsText(file: TFile): Promise<boolean> {
     try {
       if (BINARY_EXTENSIONS.has(extensionOf(file.path))) throw new Error('This file type is not a plain-text format.');
       if (file.stat.size > MAX_FILE_BYTES) throw new Error('This file exceeds the 20 MB editing limit.');
       decodeText(await this.app.vault.readBinary(file));
       const existing = this.views.find(view => view.file === file);
-      if (existing) { await this.app.workspace.revealLeaf(existing.leaf); existing.editor?.focus(); return; }
+      if (existing) { await this.app.workspace.revealLeaf(existing.leaf); existing.editor?.focus(); return true; }
       const leaf = this.app.workspace.getLeaf('tab');
       await leaf.setViewState({ type: VIEW_TYPE, state: { file: file.path }, active: true });
       await this.app.workspace.revealLeaf(leaf);
       if (leaf.view instanceof SimpleTextView) leaf.view.editor?.focus();
+      return true;
     } catch (error) {
       new Notice(error instanceof Error ? error.message : 'Unable to open this file.');
+      return false;
     }
   }
 
@@ -95,16 +97,40 @@ export default class JustSimpleFileViewer extends Plugin {
   }
 }
 
-class TextFilePicker extends FuzzySuggestModal<TFile> {
+class TextFilePathModal extends Modal {
+  private pathValue: string;
+  private opening = false;
+
   constructor(app: App, private readonly plugin: JustSimpleFileViewer) {
     super(app);
-    this.setPlaceholder('Choose a text file from this vault…');
+    this.pathValue = app.workspace.getActiveFile()?.path ?? '';
+    this.scope.register([], 'Enter', () => { void this.openPath(); return false; });
   }
-  getItems(): TFile[] {
-    return this.app.vault.getFiles().filter(file => !BINARY_EXTENSIONS.has(extensionOf(file.path)));
+
+  onOpen(): void {
+    this.setTitle('Open text file');
+    this.contentEl.createEl('p', { text: 'Enter a file path relative to your vault. You can also open files from the explorer context menu.' });
+    new Setting(this.contentEl).setName('File path')
+      .addText(input => {
+        input.setPlaceholder('folder/example.json').setValue(this.pathValue)
+          .onChange(value => { this.pathValue = value; });
+        input.inputEl.setAttribute('aria-label', 'File path');
+        input.inputEl.focus();
+        input.inputEl.select();
+      })
+      .addButton(button => button.setButtonText('Open').setCta().onClick(() => { void this.openPath(); }));
   }
-  getItemText(file: TFile): string { return file.path; }
-  onChooseItem(file: TFile): void { void this.plugin.openAsText(file); }
+
+  private async openPath(): Promise<void> {
+    if (this.opening) return;
+    const file = this.app.vault.getFileByPath(normalizePath(this.pathValue.trim()));
+    if (!file) { new Notice('File not found. Enter a path relative to your vault.'); return; }
+    this.opening = true;
+    try { if (await this.plugin.openAsText(file)) this.close(); }
+    finally { this.opening = false; }
+  }
+
+  onClose(): void { this.contentEl.empty(); }
 }
 
 class FileViewerSettings extends PluginSettingTab {

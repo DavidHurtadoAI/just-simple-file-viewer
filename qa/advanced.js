@@ -54,7 +54,7 @@
   check(p.views.length === 0, 'Editor instances are removed when the plugin unloads');
   await app.plugins.enablePlugin('just-simple-file-viewer');
   const updated = app.plugins.plugins['just-simple-file-viewer'];
-  const json = app.vault.getFiles().filter(f => f.name === 'settings.json').at(-1);
+  const json = await app.vault.create(`preview-${Date.now()}.json`, '{"ready":true}\n');
   await updated.openAsText(json);
   return { count: checks.length, checks };
 })()
