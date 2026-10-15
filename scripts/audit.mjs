@@ -36,4 +36,5 @@ const releaseWorkflow = await readFile('.github/workflows/release.yml', 'utf8');
 const publish = releaseWorkflow.split('\n').find(line => line.trim().startsWith('gh release create '));
 assert.ok(publish && /"\$GITHUB_REF_NAME" main\.js manifest\.json styles\.css --verify-tag/.test(publish), 'Release must upload only the three Obsidian assets');
 assert.ok(!/\.zip\b/.test(releaseWorkflow), 'No unsupported ZIP release assets');
+assert.ok(!/!\s*important\b/i.test(await readFile('styles.css', 'utf8')), 'Styles must use scoped selectors instead of !important');
 console.log(`Audit passed: ${(size / 1024).toFixed(1)} KiB; editor libraries supplied by Obsidian; no network calls.`);
