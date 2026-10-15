@@ -1,0 +1,7 @@
+{
+  "plugin": "Just Simple File Viewer",
+  "purpose": "Read and edit text files inside Obsidian",
+  "localOnly": true,
+  "examples": ["JSON", "CSV", "Python", "TXT"],
+  "answer": 42
+}

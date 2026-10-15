@@ -1,0 +1,10 @@
+Just Simple File Viewer
+
+Open JSON, CSV, Python and other text files in normal Obsidian tabs.
+Edit directly. Changes save automatically.
+
+Ctrl/Cmd+F: find and replace
+Ctrl/Cmd+S: save immediately
+Alt+Z: toggle word wrap
+
+Accents and Unicode: Málaga, información, café, 🌍
