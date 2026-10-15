@@ -2,7 +2,7 @@
 
 There are already Obsidian plugins that open many kinds of files and offer extensive editing features. **Just Simple File Viewer deliberately aims for minimalism:** a small, focused way to read and edit text files in normal Obsidian tabs.
 
-Open JSON, CSV, Python, TXT, configuration files and other text files, edit the source directly, and keep everything in your vault. It reuses the CodeMirror editor already built into Obsidian and bundles only selected syntax parsers. The JavaScript is about **78 KiB uncompressed**.
+Open JSON, CSV, Python, TXT, configuration files and other text files, edit the source directly, and keep everything in your vault. It reuses the CodeMirror editor already built into Obsidian and bundles only selected syntax parsers. The JavaScript is about **80 KiB uncompressed**, including license notices.
 
 No Office viewers, document conversion engines, separate editor runtime, accounts or remote services. Just text.
 

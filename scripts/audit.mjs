@@ -22,6 +22,8 @@ const bundled = Object.keys(meta.inputs);
 assert.ok(bundled.some(x => x.includes('legacy-modes')));
 assert.ok(!bundled.some(x => /node_modules\/(?:@codemirror\/(?:state|view|commands|search|language)\/|@lezer\/)/.test(x)), 'Host editor libraries must not be bundled');
 const js = await readFile('main.js', 'utf8');
+assert.ok(js.includes('Copyright (c) 2026 David Hurtado') && js.includes('Marijn Haverbeke')
+  && js.includes('Permission is hereby granted'), 'License notices must ship inside the JavaScript asset');
 assert.ok(!/\b(?:fetch|XMLHttpRequest|eval)\s*\(|https?:\/\//.test(js), 'No networking or dynamic code');
 assert.ok(!/\.\s*get(?:Files|MarkdownFiles|AllLoadedFiles)\s*\(/.test(js), 'No vault-wide file enumeration');
 const external = [...js.matchAll(/require\(["']([^"']+)["']\)/g)].map(x => x[1]);
