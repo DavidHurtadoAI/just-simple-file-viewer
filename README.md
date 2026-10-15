@@ -2,7 +2,7 @@
 
 There are already Obsidian plugins that open many kinds of files and offer extensive editing features. **Just Simple File Viewer deliberately aims for minimalism:** a small, focused way to read and edit text files in normal Obsidian tabs.
 
-Open JSON, CSV, Python, TXT, configuration files and other text files, edit the source directly, and keep everything in your vault. It reuses the CodeMirror editor already built into Obsidian and bundles only selected syntax parsers. The JavaScript is about **77 KiB uncompressed**.
+Open JSON, CSV, Python, TXT, configuration files and other text files, edit the source directly, and keep everything in your vault. It reuses the CodeMirror editor already built into Obsidian and bundles only selected syntax parsers. The JavaScript is about **78 KiB uncompressed**.
 
 No Office viewers, document conversion engines, separate editor runtime, accounts or remote services. Just text.
 
@@ -23,7 +23,7 @@ No Office viewers, document conversion engines, separate editor runtime, account
 
 ## Use
 
-Click a supported file in the vault file explorer. For any other text extension, use **Just Simple File Viewer: Open text file** from the command palette, or right-click a file and choose **Open as text**. This also handles files without extensions, such as `Makefile`, and dotfiles that Obsidian exposes through its vault API. Obsidian's hidden configuration folder is outside this API.
+Click a supported file in the vault file explorer. For any other text extension, right-click a file and choose **Open as text**, or use **Just Simple File Viewer: Open text file** from the command palette and enter its path relative to the vault, such as `folder/example.json`. The command opens that specific file without enumerating the vault. This also handles files without extensions, such as `Makefile`, and dotfiles that Obsidian exposes through its vault API. Obsidian's hidden configuration folder is outside this API.
 
 In settings, add extensions separated by commas. Reload the plugin to apply extension associations. Markdown, Canvas, Bases, SVG and extensions already owned by another view keep their normal default viewer; **Open as text** can explicitly open their textual source. Known Office, PDF, image, archive and executable extensions are excluded.
 
@@ -40,7 +40,7 @@ Files up to 20 MiB can be opened. Syntax highlighting is omitted above 1,048,576
 Requires **Obsidian 1.13.0 or later**.
 
 1. Download `main.js`, `manifest.json` and `styles.css` from the [latest release](https://github.com/DavidHurtadoAI/just-simple-file-viewer/releases/latest).
-2. Create `<vault>/.obsidian/plugins/just-simple-file-viewer/` and copy the three files into it. Alternatively, extract the release ZIP into `<vault>/.obsidian/plugins/`.
+2. Create `<vault>/.obsidian/plugins/just-simple-file-viewer/` and copy the three files into it.
 3. Reload Obsidian and enable **Just Simple File Viewer** under **Settings → Community plugins**.
 
 ## Development

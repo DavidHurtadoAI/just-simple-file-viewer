@@ -68,8 +68,12 @@
   await v.save();
   check(await app.vault.read(txt) === 'REMOTE\n', 'Conflicting local edits never overwrite disk');
   check(v.getViewData().startsWith('LOCAL '), 'Conflicts retain local edits in the tab');
-  await leaf.setViewState({ type: 'empty' });
-  const recovery = app.vault.getFiles().find(f => f.path.startsWith(`${folder}/plain (local copy`));
+  let recovery;
+  const recoveryListener = app.vault.on('create', file => {
+    if (file.path.startsWith(`${folder}/plain (local copy`)) recovery = file;
+  });
+  try { await leaf.setViewState({ type: 'empty' }); }
+  finally { app.vault.offref(recoveryListener); }
   check(!!recovery && (await app.vault.read(recovery)).startsWith('LOCAL '), 'Closing a conflict tab saves a recovery copy');
   v = await open(bad);
   check(!v.ready && v.banner.textContent.includes('UTF-8'), 'Binary data under a text extension is blocked');
