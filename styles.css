@@ -1,6 +1,11 @@
 .workspace-leaf-content[data-type="just-simple-file-viewer"] > .view-content.jsfv-content { padding: 0; overflow: hidden; }
 .jsfv-root { display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--background-primary); }
 .jsfv-editor { flex: 1; min-height: 0; overflow: hidden; }
+.jsfv-root .jsfv-editor[hidden], .jsfv-root .jsfv-table[hidden], .jsfv-status .jsfv-position[hidden], .workspace-leaf-content[data-type="just-simple-file-viewer"] .view-action[hidden] { display: none; }
+.jsfv-table { flex: 1; min-height: 0; overflow: auto; padding: 16px; font-size: var(--font-text-size); user-select: text; }
+.jsfv-table table { margin: 0; }
+.jsfv-table th, .jsfv-table td { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 4em; max-width: 40em; }
+.jsfv-table-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; color: var(--text-muted); font-size: var(--font-ui-small); }
 .jsfv-editor .cm-editor { height: 100%; background: var(--background-primary); color: var(--text-normal); }
 .jsfv-editor .cm-scroller { overflow: auto; font-family: var(--font-monospace); font-size: var(--font-text-size); line-height: 1.6; }
 .jsfv-editor .cm-content { padding: 16px 0; caret-color: var(--text-normal); }

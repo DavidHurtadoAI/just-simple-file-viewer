@@ -2,9 +2,11 @@
 
 Verified on 2026-10-15: the initial editor was tested in Obsidian 1.13.4 and 1.14.4. Version 0.1.1 passed all 43 live checks in an isolated 1.14.4 desktop vault; the development vault also runs 1.14.4.
 
-`npm run check` covers ESLint with no warnings, strict TypeScript, six unit tests, the production build and the bundle audit. `npm audit` reported zero vulnerabilities.
+`npm run check` covers ESLint with no warnings, strict TypeScript, 11 unit tests, the production build and the bundle audit. `npm audit` reported zero vulnerabilities.
 
 For 0.1.2, the CSS specificity change was checked live in the development vault: content padding remained zero and the root retained the same full-height bounds. The release audit now rejects `!important` declarations in `styles.css`.
+
+For 0.2.0, `csv.js` passed 27 checks in the isolated 1.14.4 vault: default table display, native table styles, literal Markdown/HTML, quoted separators and multiline cells, switching through actual buttons, editing and saving with BOM/CRLF preservation, source selection, find, external reload, all three settings through their rendered controls, malformed and empty CSV, a bounded preview of 120,000 data rows and unchanged source bytes. The 26 editor integration checks and seven lifecycle checks also passed. `csv-preview.js` produces the public table screenshot.
 
 `integration.js` runs 26 checks in Obsidian: actual source editing and disk persistence, highlighting, search controls, line numbers and wrapping, UTF-8 BOM and CRLF, clean external reload, conflict protection, recovery copies on close, binary rejection, unknown extensions and extensionless files, native Markdown handling and viewport rendering of a 120,000-line file.
 
@@ -22,6 +24,8 @@ node qa/run.mjs qa/reload.js
 node qa/run.mjs
 node qa/run.mjs qa/advanced.js
 node qa/run.mjs qa/open-path.js
+node qa/run.mjs qa/csv.js
+node qa/run.mjs qa/csv-preview.js docs/images/csv-table.png
 ```
 
 The test scripts create their own uniquely named fixtures. The main run writes `qa/results.json` and `qa/editor.png`. The isolated vault must contain the built `main.js`, `manifest.json` and `styles.css` in its plugin folder. Its community plugins must be enabled.

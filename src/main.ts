@@ -1,6 +1,7 @@
 import { Modal, normalizePath, Notice, Plugin, PluginSettingTab, Setting, TFile, type App, type SettingDefinition } from 'obsidian';
 import { BINARY_EXTENSIONS, decodeText, DEFAULT_EXTENSIONS, extensionOf, MAX_FILE_BYTES, NATIVE_EXTENSIONS, parseExtensions } from './text.ts';
 import { SimpleTextView, VIEW_TYPE } from './view';
+import type { CsvDelimiter } from './csv.ts';
 
 interface Settings {
   extensions: string;
@@ -8,6 +9,9 @@ interface Settings {
   wordWrap: boolean;
   lineNumbers: boolean;
   tabSize: number;
+  csvView: 'table' | 'text';
+  csvDelimiter: CsvDelimiter;
+  csvHeader: boolean;
 }
 const DEFAULT_SETTINGS: Settings = {
   extensions: DEFAULT_EXTENSIONS.join(', '),
@@ -15,6 +19,9 @@ const DEFAULT_SETTINGS: Settings = {
   wordWrap: false,
   lineNumbers: true,
   tabSize: 4,
+  csvView: 'table',
+  csvDelimiter: 'auto',
+  csvHeader: true,
 };
 
 export default class JustSimpleFileViewer extends Plugin {
@@ -31,6 +38,9 @@ export default class JustSimpleFileViewer extends Plugin {
     this.settings = { ...DEFAULT_SETTINGS, ...saved };
     if (typeof this.settings.extensions !== 'string') this.settings.extensions = DEFAULT_SETTINGS.extensions;
     if (![2, 4, 8].includes(this.settings.tabSize)) this.settings.tabSize = 4;
+    if (!['table', 'text'].includes(this.settings.csvView)) this.settings.csvView = 'table';
+    if (!['auto', 'comma', 'semicolon', 'tab'].includes(this.settings.csvDelimiter)) this.settings.csvDelimiter = 'auto';
+    if (typeof this.settings.csvHeader !== 'boolean') this.settings.csvHeader = true;
     this.registerView(VIEW_TYPE, leaf => new SimpleTextView(leaf, this));
     const extensions: string[] = [];
     for (const extension of parseExtensions(this.settings.extensions)) {
@@ -79,11 +89,11 @@ export default class JustSimpleFileViewer extends Plugin {
       if (file.stat.size > MAX_FILE_BYTES) throw new Error('This file exceeds the 20 MB editing limit.');
       decodeText(await this.app.vault.readBinary(file));
       const existing = this.views.find(view => view.file === file);
-      if (existing) { await this.app.workspace.revealLeaf(existing.leaf); existing.editor?.focus(); return true; }
+      if (existing) { await this.app.workspace.revealLeaf(existing.leaf); existing.focusContent(); return true; }
       const leaf = this.app.workspace.getLeaf('tab');
       await leaf.setViewState({ type: VIEW_TYPE, state: { file: file.path }, active: true });
       await this.app.workspace.revealLeaf(leaf);
-      if (leaf.view instanceof SimpleTextView) leaf.view.editor?.focus();
+      if (leaf.view instanceof SimpleTextView) leaf.view.focusContent();
       return true;
     } catch (error) {
       new Notice(error instanceof Error ? error.message : 'Unable to open this file.');
@@ -139,6 +149,9 @@ class FileViewerSettings extends PluginSettingTab {
     return [
       { name: 'File extensions', desc: 'Open these extensions as text by default. Separate with commas. Reload the plugin after changing this list. Existing native views and other plugins take priority.', control: { type: 'textarea', key: 'extensions', rows: 5 } },
       { name: 'Excluded extensions', desc: this.plugin.skippedExtensions.join(', '), visible: () => this.plugin.skippedExtensions.length > 0 },
+      { name: 'CSV default view', desc: 'Show a table styled like Markdown or edit the source text. Switch views with the button in the file header.', control: { type: 'dropdown', key: 'csvView', options: { table: 'Table', text: 'Text' } } },
+      { name: 'CSV separator', desc: 'Automatic detection uses the first row, ignoring separators inside quotes.', control: { type: 'dropdown', key: 'csvDelimiter', options: { auto: 'Automatic', comma: 'Comma', semicolon: 'Semicolon', tab: 'Tab' } } },
+      { name: 'CSV header row', desc: 'Use the first row as column headings.', control: { type: 'toggle', key: 'csvHeader' } },
       { name: 'Syntax highlighting', desc: 'Color supported languages. Files over one million characters use plain text to keep editing responsive.', control: { type: 'toggle', key: 'highlightSyntax' } },
       { name: 'Line numbers', control: { type: 'toggle', key: 'lineNumbers' } },
       { name: 'Word wrap', desc: 'Wrap long lines. Toggle the active tab with Alt+Z or its wrap button.', control: { type: 'toggle', key: 'wordWrap' } },
@@ -153,6 +166,12 @@ class FileViewerSettings extends PluginSettingTab {
     const { settings } = this.plugin;
     if (key === 'extensions' && typeof value === 'string') settings.extensions = value;
     if (key === 'tabSize' && [2, 4, 8].includes(Number(value))) settings.tabSize = Number(value);
+    if (key === 'csvView' && (value === 'table' || value === 'text')) {
+      settings.csvView = value;
+      for (const view of this.plugin.views) view.setCsvView(value, false);
+    }
+    if (key === 'csvDelimiter' && (value === 'auto' || value === 'comma' || value === 'semicolon' || value === 'tab')) settings.csvDelimiter = value;
+    if (key === 'csvHeader' && typeof value === 'boolean') settings.csvHeader = value;
     if ((key === 'highlightSyntax' || key === 'lineNumbers' || key === 'wordWrap') && typeof value === 'boolean') {
       settings[key] = value;
       if (key === 'wordWrap') for (const view of this.plugin.views) view.setWrap(value);
