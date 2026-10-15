@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+- Clarify in the README that the CSV table view is read-only and editing requires **Edit as text**, which edits the original CSV source.
+- Documentation-only update; plugin behavior is unchanged.
+
 ## 0.2.0
 
 - Preview CSV files as tables using Obsidian's Markdown table styles; switch to text for editing without converting the file.

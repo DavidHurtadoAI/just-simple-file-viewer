@@ -13,7 +13,7 @@ No Office viewers, document conversion engines, separate editor runtime, account
 - Normal Obsidian tabs, splits and pop-out windows.
 - Automatic saving after 750 ms without typing, plus immediate save with Ctrl/Cmd+S and on tab close.
 - Syntax highlighting for JSON, JavaScript, TypeScript, Python, CSS, HTML/XML, YAML, TOML, shell scripts, diff and properties files.
-- CSV table preview styled like native Markdown tables, with one-click switching to source editing. Other languages and TSV remain editable plain text.
+- Read-only CSV table preview styled like native Markdown tables. Click **Edit as text** to edit the CSV source. Other languages and TSV remain editable plain text.
 - Find and replace with case matching, whole words and regular expressions (Ctrl/Cmd+F or Ctrl/Cmd+H).
 - Undo/redo, multiple selections, line numbers, indentation and optional word wrap (Alt+Z).
 - Native theme colors and monospace font; no separate editor theme to configure.
@@ -29,7 +29,7 @@ In settings, add extensions separated by commas. Reload the plugin to apply exte
 
 ### CSV tables
 
-CSV files open as a table by default. Click **Edit as text** to edit the CSV source, then use the table button in the file header to return to the preview. Find and replace also switches to text. Switching views never converts the file to Markdown or changes its contents.
+CSV files open as a **read-only table** by default. **To edit a CSV, click Edit as text** and modify the original CSV source, then use the table button in the file header to return to the preview. Cells cannot be edited in the table view. Find and replace also switches to text. The preview uses Markdown table styles; switching views never converts the file to Markdown or changes its contents.
 
 ![CSV preview in Obsidian using native Markdown table styles, with an Edit as text button](docs/images/csv-table.png)
 
