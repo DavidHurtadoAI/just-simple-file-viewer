@@ -8,6 +8,8 @@ For 0.1.2, the CSS specificity change was checked live in the development vault:
 
 For 0.2.0, `csv.js` passed 27 checks in the isolated 1.14.4 vault: default table display, native table styles, literal Markdown/HTML, quoted separators and multiline cells, switching through actual buttons, editing and saving with BOM/CRLF preservation, source selection, find, external reload, all three settings through their rendered controls, malformed and empty CSV, a bounded preview of 120,000 data rows and unchanged source bytes. The 26 editor integration checks and seven lifecycle checks also passed. `csv-preview.js` produces the public table screenshot.
 
+For 0.3.0, `fonts.js` passed 25 checks in the isolated desktop vault. Native Appearance settings were changed to Georgia/Courier New at 22 px and Verdana/Consolas at 19 px. The tests check the actual editor content and CSV cells, automatic selection across 11 file types, all three rendered Font options, immediate changes in open tabs, retained source/cursor/table DOM, preference persistence after reload, updates after renaming and continued read-only CSV previews. A real split-pane screenshot was inspected with standard text and code side by side at 22 px. The 26 editor integration checks and seven lifecycle checks also passed.
+
 `integration.js` runs 26 checks in Obsidian: actual source editing and disk persistence, highlighting, search controls, line numbers and wrapping, UTF-8 BOM and CRLF, clean external reload, conflict protection, recovery copies on close, binary rejection, unknown extensions and extensionless files, native Markdown handling and viewport rendering of a 120,000-line file.
 
 `advanced.js` runs seven additional checks: edits during an in-flight save, absence of false conflicts from our own writes, immediate saving on close, settings rendering, live settings changes, saving on plugin disable and editor cleanup.
@@ -25,6 +27,7 @@ node qa/run.mjs
 node qa/run.mjs qa/advanced.js
 node qa/run.mjs qa/open-path.js
 node qa/run.mjs qa/csv.js
+node qa/run.mjs qa/fonts.js
 node qa/run.mjs qa/csv-preview.js docs/images/csv-table.png
 ```
 

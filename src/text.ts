@@ -22,6 +22,27 @@ export const BINARY_EXTENSIONS = new Set([
 export const MAX_FILE_BYTES = 20 * 1024 * 1024;
 export const HIGHLIGHT_LIMIT = 1024 * 1024;
 
+export type FontMode = 'auto' | 'text' | 'monospace';
+const CODE_EXTENSIONS = new Set([
+  'json', 'jsonc', 'jsonl', 'ndjson', 'py', 'pyi', 'python',
+  'js', 'mjs', 'cjs', 'jsx', 'ts', 'tsx', 'css', 'scss', 'less',
+  'html', 'htm', 'xml', 'xsl', 'svg', 'yaml', 'yml', 'toml',
+  'ini', 'cfg', 'conf', 'config', 'env', 'properties',
+  'sh', 'bash', 'zsh', 'fish', 'ps1', 'psm1', 'bat', 'cmd',
+  'sql', 'r', 'rb', 'go', 'rs', 'c', 'h', 'cpp', 'hpp', 'cs',
+  'java', 'kt', 'swift', 'php', 'lua', 'dart', 'vue', 'svelte',
+  'graphql', 'gql', 'tex', 'bib', 'diff', 'patch', 'canvas', 'base',
+]);
+const CODE_FILENAMES = new Set([
+  'makefile', 'dockerfile', 'justfile', 'gemfile', 'rakefile', 'cmakelists.txt',
+  '.gitignore', '.gitattributes', '.editorconfig', '.bashrc', '.zshrc', '.bash_profile',
+]);
+
+export function usesMonospace(path: string, mode: FontMode): boolean {
+  if (mode !== 'auto') return mode === 'monospace';
+  return CODE_EXTENSIONS.has(extensionOf(path)) || CODE_FILENAMES.has((path.split('/').pop() ?? path).toLowerCase());
+}
+
 export function extensionOf(path: string): string {
   const name = path.split('/').pop() ?? path;
   const dot = name.lastIndexOf('.');

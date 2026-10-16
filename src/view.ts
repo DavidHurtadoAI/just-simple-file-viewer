@@ -8,7 +8,7 @@ import { closeSearchPanel, openSearchPanel, search, searchKeymap } from '@codemi
 import { tags } from '@lezer/highlight';
 import type JustSimpleFileViewer from './main';
 import { languageFor } from './languages';
-import { checkedUpdate, conflictCopyPath, decodeText, extensionOf, HIGHLIGHT_LIMIT, MAX_FILE_BYTES, TextConflictError, textFormat } from './text.ts';
+import { checkedUpdate, conflictCopyPath, decodeText, extensionOf, HIGHLIGHT_LIMIT, MAX_FILE_BYTES, TextConflictError, textFormat, usesMonospace } from './text.ts';
 import { CSV_PREVIEW_CHAR_LIMIT, parseCsvPreview } from './csv.ts';
 
 export const VIEW_TYPE = 'just-simple-file-viewer';
@@ -94,6 +94,7 @@ export class SimpleTextView extends FileView {
     this.registerEvent(this.app.vault.on('modify', file => {
       if (file === this.file) void this.refreshFromDisk();
     }));
+    this.registerEvent(this.app.workspace.on('css-change', () => this.editor?.requestMeasure()));
     this.updateStatus();
     this.updatePresentation();
   }
@@ -150,10 +151,12 @@ export class SimpleTextView extends FileView {
       this.language.reconfigure(this.languageExtension(this.editor.state.doc.length)),
     ] });
     this.updatePresentation();
+    this.editor.requestMeasure();
     this.updateStatus();
   }
 
   private updatePresentation(): void {
+    this.root.toggleClass('jsfv-monospace', usesMonospace(this.file?.path ?? '', this.plugin.settings.fontMode));
     const csv = extensionOf(this.file?.path ?? '') === 'csv';
     const table = csv && this.csvTable && this.ready;
     this.tableAction.hidden = !csv;
