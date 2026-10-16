@@ -1,5 +1,5 @@
 import { Modal, normalizePath, Notice, Plugin, PluginSettingTab, Setting, TFile, type App, type SettingDefinition } from 'obsidian';
-import { BINARY_EXTENSIONS, decodeText, DEFAULT_EXTENSIONS, extensionOf, MAX_FILE_BYTES, NATIVE_EXTENSIONS, parseExtensions } from './text.ts';
+import { BINARY_EXTENSIONS, decodeText, DEFAULT_EXTENSIONS, extensionOf, MAX_FILE_BYTES, NATIVE_EXTENSIONS, parseExtensions, type FontMode } from './text.ts';
 import { SimpleTextView, VIEW_TYPE } from './view';
 import type { CsvDelimiter } from './csv.ts';
 
@@ -12,6 +12,7 @@ interface Settings {
   csvView: 'table' | 'text';
   csvDelimiter: CsvDelimiter;
   csvHeader: boolean;
+  fontMode: FontMode;
 }
 const DEFAULT_SETTINGS: Settings = {
   extensions: DEFAULT_EXTENSIONS.join(', '),
@@ -22,6 +23,7 @@ const DEFAULT_SETTINGS: Settings = {
   csvView: 'table',
   csvDelimiter: 'auto',
   csvHeader: true,
+  fontMode: 'auto',
 };
 
 export default class JustSimpleFileViewer extends Plugin {
@@ -41,6 +43,7 @@ export default class JustSimpleFileViewer extends Plugin {
     if (!['table', 'text'].includes(this.settings.csvView)) this.settings.csvView = 'table';
     if (!['auto', 'comma', 'semicolon', 'tab'].includes(this.settings.csvDelimiter)) this.settings.csvDelimiter = 'auto';
     if (typeof this.settings.csvHeader !== 'boolean') this.settings.csvHeader = true;
+    if (!['auto', 'text', 'monospace'].includes(this.settings.fontMode)) this.settings.fontMode = 'auto';
     this.registerView(VIEW_TYPE, leaf => new SimpleTextView(leaf, this));
     const extensions: string[] = [];
     for (const extension of parseExtensions(this.settings.extensions)) {
@@ -149,6 +152,7 @@ class FileViewerSettings extends PluginSettingTab {
     return [
       { name: 'File extensions', desc: 'Open these extensions as text by default. Separate with commas. Reload the plugin after changing this list. Existing native views and other plugins take priority.', control: { type: 'textarea', key: 'extensions', rows: 5 } },
       { name: 'Excluded extensions', desc: this.plugin.skippedExtensions.join(', '), visible: () => this.plugin.skippedExtensions.length > 0 },
+      { name: 'Font', desc: 'Use Obsidian\'s configured text font for text and CSV, and its monospace font for code. All modes follow Obsidian\'s text size.', control: { type: 'dropdown', key: 'fontMode', options: { auto: 'Automatic', text: 'Standard text font', monospace: 'Monospace font' } } },
       { name: 'CSV default view', desc: 'Show a table styled like Markdown or edit the source text. Switch views with the button in the file header.', control: { type: 'dropdown', key: 'csvView', options: { table: 'Table', text: 'Text' } } },
       { name: 'CSV separator', desc: 'Automatic detection uses the first row, ignoring separators inside quotes.', control: { type: 'dropdown', key: 'csvDelimiter', options: { auto: 'Automatic', comma: 'Comma', semicolon: 'Semicolon', tab: 'Tab' } } },
       { name: 'CSV header row', desc: 'Use the first row as column headings.', control: { type: 'toggle', key: 'csvHeader' } },
@@ -166,6 +170,7 @@ class FileViewerSettings extends PluginSettingTab {
     const { settings } = this.plugin;
     if (key === 'extensions' && typeof value === 'string') settings.extensions = value;
     if (key === 'tabSize' && [2, 4, 8].includes(Number(value))) settings.tabSize = Number(value);
+    if (key === 'fontMode' && (value === 'auto' || value === 'text' || value === 'monospace')) settings.fontMode = value;
     if (key === 'csvView' && (value === 'table' || value === 'text')) {
       settings.csvView = value;
       for (const view of this.plugin.views) view.setCsvView(value, false);

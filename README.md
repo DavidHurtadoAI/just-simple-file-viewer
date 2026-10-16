@@ -2,7 +2,7 @@
 
 There are already Obsidian plugins that open many kinds of files and offer extensive editing features. **Just Simple File Viewer deliberately aims for minimalism:** a small, focused way to read and edit text files in normal Obsidian tabs.
 
-Open JSON, CSV, Python, TXT, configuration files and other text files, edit the source directly, and keep everything in your vault. It reuses the CodeMirror editor already built into Obsidian and bundles only selected syntax parsers. The JavaScript is about **85 KiB uncompressed**, including license notices.
+Open JSON, CSV, Python, TXT, configuration files and other text files, edit the source directly, and keep everything in your vault. It reuses the CodeMirror editor already built into Obsidian and bundles only selected syntax parsers. The JavaScript is about **86 KiB uncompressed**, including license notices.
 
 No Office viewers, document conversion engines, separate editor runtime, accounts or remote services. Just text.
 
@@ -16,7 +16,7 @@ No Office viewers, document conversion engines, separate editor runtime, account
 - Read-only CSV table preview styled like native Markdown tables. Click **Edit as text** to edit the CSV source. Other languages and TSV remain editable plain text.
 - Find and replace with case matching, whole words and regular expressions (Ctrl/Cmd+F or Ctrl/Cmd+H).
 - Undo/redo, multiple selections, line numbers, indentation and optional word wrap (Alt+Z).
-- Native theme colors and monospace font; no separate editor theme to configure.
+- Native theme colors, Obsidian's configured fonts and text size, with automatic or forced standard/monospace typography.
 - Checks file contents before editing and refuses known binary formats.
 - Atomic conflict checking: external changes are reloaded when the tab is clean; concurrent edits show a conflict banner instead of silently overwriting either version.
 - If a dirty tab closes after a conflict or save failure, its local edits are saved in a separate recovery copy.
@@ -26,6 +26,16 @@ No Office viewers, document conversion engines, separate editor runtime, account
 Click a supported file in the vault file explorer. For any other text extension, right-click a file and choose **Open as text**, or use **Just Simple File Viewer: Open text file** from the command palette and enter its path relative to the vault, such as `folder/example.json`. The command opens that specific file without enumerating the vault. This also handles files without extensions, such as `Makefile`, and dotfiles that Obsidian exposes through its vault API. Obsidian's hidden configuration folder is outside this API.
 
 In settings, add extensions separated by commas. Reload the plugin to apply extension associations. Markdown, Canvas, Bases, SVG and extensions already owned by another view keep their normal default viewer; **Open as text** can explicitly open their textual source. Known Office, PDF, image, archive and executable extensions are excluded.
+
+### Fonts
+
+The editor and CSV table preview use the fonts and text size configured in **Obsidian → Settings → Appearance**. The plugin's **Font** setting controls which font is used:
+
+- **Automatic** (default): the monospace font for code, structured formats and configuration files, including JSON, Python, JavaScript, SQL and YAML; the standard text font for plain text, logs, CSV/TSV, prose formats and unknown extensions. Common code filenames such as `Makefile` and `Dockerfile` also use monospace.
+- **Standard text font:** force Obsidian's text font for every file, including code.
+- **Monospace font:** force Obsidian's monospace font for every file, including CSV tables.
+
+All three modes follow Obsidian's configured text size. Font settings apply to open tabs immediately and the CSV table remains read-only.
 
 ### CSV tables
 

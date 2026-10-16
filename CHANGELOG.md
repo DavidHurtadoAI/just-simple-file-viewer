@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+- Use Obsidian's configured text font, monospace font and text size in the source editor and CSV table preview.
+- Choose fonts automatically by file type: monospace for code and configuration, standard text for prose, logs and CSV/TSV.
+- Add a **Font** setting to force the standard or monospace font for every file; open tabs update immediately.
+
 ## 0.2.1
 
 - Clarify in the README that the CSV table view is read-only and editing requires **Edit as text**, which edits the original CSV source.
