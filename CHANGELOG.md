@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.1
+
+- Honor Obsidian's Vim key binding preference in the text editor, including normal, insert and visual modes, motions, operators and undo.
+- Apply preference changes to open tabs without resetting text, cursor or undo history.
+- Save with :w through the existing conflict-aware save path. CSV table previews remain read-only; switch to text to edit.
+- Include Vim license notices and refresh a vulnerable development-only URI dependency. The editor runtime continues to come from Obsidian; the bundle remains below 220 KiB.
+
+Validated with lint, 11 unit tests, type checking, release audit, zero reported dependency vulnerabilities and 15 real Obsidian Vim checks.
+
 ## 0.3.0
 
 - Use Obsidian's configured text font, monospace font and text size in the source editor and CSV table preview.
