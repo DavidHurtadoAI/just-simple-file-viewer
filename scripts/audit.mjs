@@ -17,7 +17,8 @@ assert.equal(Object.keys(pkg.dependencies ?? {}).length, 0);
 assert.ok((await readFile('LICENSE', 'utf8')).startsWith('MIT License'));
 assert.ok((await readFile('THIRD-PARTY-NOTICES.md', 'utf8')).includes('CodeMirror legacy modes'));
 const size = (await stat('main.js')).size;
-assert.ok(size < 180 * 1024, `Editor bundle exceeds 180 KiB: ${size}`);
+// Vim adds its adapter and engine; host CodeMirror modules stay external.
+assert.ok(size < 220 * 1024, `Editor bundle exceeds 220 KiB: ${size}`);
 const bundled = Object.keys(meta.inputs);
 assert.ok(bundled.some(x => x.includes('legacy-modes')));
 assert.ok(!bundled.some(x => /node_modules\/(?:@codemirror\/(?:state|view|commands|search|language)\/|@lezer\/)/.test(x)), 'Host editor libraries must not be bundled');

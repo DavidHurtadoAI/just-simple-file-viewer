@@ -30,6 +30,11 @@ export default class JustSimpleFileViewer extends Plugin {
   settings: Settings = { ...DEFAULT_SETTINGS };
   skippedExtensions: string[] = [];
 
+  get vimMode(): boolean {
+    // Obsidian does not yet expose getConfig in its public Vault typings.
+    return (this.app.vault as typeof this.app.vault & { getConfig(key: string): unknown }).getConfig('vimMode') === true;
+  }
+
   get views(): SimpleTextView[] {
     return this.app.workspace.getLeavesOfType(VIEW_TYPE)
       .map(leaf => leaf.view).filter((view): view is SimpleTextView => view instanceof SimpleTextView);
