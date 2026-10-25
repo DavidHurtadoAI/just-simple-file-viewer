@@ -78,3 +78,9 @@ npm run dev
 Uses Obsidian's existing CodeMirror 6 modules for editing, history, search and viewport rendering. Only selected MIT-licensed CodeMirror stream parsers are included in the plugin bundle. No Monaco, React, network access, telemetry, CDN or separate editor runtime. See `THIRD-PARTY-NOTICES.md`.
 
 The minimum app version is a conservative API baseline. Desktop integration is tested in the development vault; mobile compatibility uses the same public APIs but requires device testing.
+
+### Vim keys
+
+The editor follows **Obsidian → Settings → Editor → Vim key bindings**. Normal, insert and visual modes, motions, operators, search and undo are supplied by CodeMirror Vim. `:w` saves through the same conflict checks as the save button. Changing the preference updates open text tabs without resetting content, cursor or undo history. CSV table previews remain read-only; switch to text to edit with Vim.
+
+The bundle remains below 220 KiB, including the Vim adapter/engine. CodeMirror's editor modules continue to come from Obsidian.

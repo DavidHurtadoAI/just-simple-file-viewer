@@ -6,6 +6,7 @@ import { bracketMatching, HighlightStyle, indentOnInput, indentUnit, syntaxHighl
 import * as CodeMirrorLanguage from '@codemirror/language';
 import { closeSearchPanel, openSearchPanel, search, searchKeymap } from '@codemirror/search';
 import { tags } from '@lezer/highlight';
+import { getCM, vim } from '@replit/codemirror-vim';
 import type JustSimpleFileViewer from './main';
 import { languageFor } from './languages';
 import { checkedUpdate, conflictCopyPath, decodeText, extensionOf, HIGHLIGHT_LIMIT, MAX_FILE_BYTES, TextConflictError, textFormat, usesMonospace } from './text.ts';
@@ -31,6 +32,8 @@ export class SimpleTextView extends FileView {
   editor: EditorView | null = null;
   private readonly options = new Compartment();
   private readonly language = new Compartment();
+  private readonly vimKeys = new Compartment();
+  private vimEnabled = false;
   private root!: HTMLElement;
   private editorHost!: HTMLElement;
   private tableHost!: HTMLElement;
@@ -87,6 +90,11 @@ export class SimpleTextView extends FileView {
     this.position = status.createSpan({ cls: 'jsfv-position' });
     this.saveState = status.createSpan({ cls: 'jsfv-save-state', attr: { 'aria-live': 'polite' } });
     this.editor = new EditorView({ parent: this.editorHost, state: this.makeState('') });
+    this.configureVimSave();
+    // Settings can change while a text tab is open. Reconfigure only when the
+    // preference changes, preserving the document, selection and undo history.
+    this.registerInterval(window.setInterval(() => this.syncVimMode(), 1000));
+    this.registerDomEvent(this.editorHost, 'focusin', () => this.syncVimMode());
     this.addAction('search', 'Find and replace', () => this.find());
     this.addAction('wrap-text', 'Toggle word wrap', () => this.toggleWrap());
     this.tableAction = this.addAction('table', 'View CSV as table', () => this.setCsvView(this.csvTable ? 'text' : 'table'));
@@ -118,9 +126,11 @@ export class SimpleTextView extends FileView {
   }
 
   private makeState(content: string): EditorState {
+    this.vimEnabled = this.plugin.vimMode;
     return EditorState.create({
       doc: content,
       extensions: [
+        this.vimKeys.of(this.vimEnabled ? vim() : []),
         history(), drawSelection(), highlightActiveLine(), bracketMatching(), indentOnInput(),
         search({ top: true }),
         keymap.of([{ key: 'Escape', run: closeSearchPanel }, ...searchKeymap, ...defaultKeymap, ...historyKeymap, indentWithTab]),
@@ -152,6 +162,20 @@ export class SimpleTextView extends FileView {
     ] });
     this.updatePresentation();
     this.editor.requestMeasure();
+    this.updateStatus();
+    this.configureVimSave();
+  }
+
+  private configureVimSave(): void {
+    const cm = this.editor ? getCM(this.editor) : null;
+    if (cm) cm.save = () => { void this.save(); };
+  }
+
+  private syncVimMode(): void {
+    if (!this.editor || this.vimEnabled === this.plugin.vimMode) return;
+    this.vimEnabled = this.plugin.vimMode;
+    this.editor.dispatch({ effects: this.vimKeys.reconfigure(this.vimEnabled ? vim() : []) });
+    this.configureVimSave();
     this.updateStatus();
   }
 
@@ -273,6 +297,7 @@ export class SimpleTextView extends FileView {
     this.ready = true;
     this.banner.hidden = true;
     this.editor?.setState(this.makeState(format.content));
+    this.configureVimSave();
     this.updatePresentation();
     this.updateStatus();
   }
@@ -392,7 +417,7 @@ export class SimpleTextView extends FileView {
     const table = !this.tableHost.hidden;
     this.position.hidden = table;
     this.position.setText(`Ln ${line.number}, Col ${cursor - line.from + 1}`);
-    this.mode.setText(table ? 'CSV table preview' : this.modeName + (state.doc.length > HIGHLIGHT_LIMIT ? ' · Large file' : ''));
+    this.mode.setText(table ? 'CSV table preview' : this.modeName + (this.vimEnabled ? ' · Vim' : '') + (state.doc.length > HIGHLIGHT_LIMIT ? ' · Large file' : ''));
     this.formatLabel.setText(`UTF-8${this.bom ? ' BOM' : ''} · ${this.eol === '\r\n' ? 'CRLF' : this.eol === '\r' ? 'CR' : 'LF'}`);
     this.saveState.setText(!this.ready ? 'Read only' : this.conflicted ? 'Conflict' : this.edited ? 'Unsaved' : 'Saved');
   }
